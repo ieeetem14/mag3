@@ -1,4 +1,4 @@
-import streamlit as st 
+import streamlit as st
 
 # --- Konfiguracja Aplikacji ---
 st.set_page_config(page_title="Prosty Magazyn", layout="wide")
@@ -9,8 +9,6 @@ st.markdown("Aplikacja przechowuje dane w pamięci sesji (bez zapisu do plików)
 
 # --- Inicjalizacja Stanu Magazynu ---
 
-# Używamy st.session_state do przechowywania listy towarów.
-# Jest to kluczowe dla utrzymania stanu aplikacji pomiędzy interakcjami.
 if 'towary' not in st.session_state:
     st.session_state['towary'] = []
     # Przykładowe dane na start (opcjonalne)
@@ -89,46 +87,28 @@ if st.session_state['towary']:
             "Ilość": towar['ilosc'],
             "Cena (PLN)": f"{towar['cena']:.2f}",
             "Wartość Całkowita (PLN)": f"{towar['ilosc'] * towar['cena']:.2f}",
-            "Akcja": f"Usuń_{i}" # Unikalny klucz do przycisku
         })
 
-    # Wyświetlanie danych za pomocą st.data_editor dla możliwości dodania przycisków
-    tabela = st.data_editor(
-        dane_do_tabeli,
-        column_config={
-            "Akcja": st.column_config.ButtonColumn(
-                "Usuń",
-                help="Kliknij, aby usunąć towar.",
-                key="usun_przycisk",
-                on_click=usun_towar,
-                args=(st.session_state['usun_przycisk_clicked_index'],)
-            )
-        },
-        hide_index=True,
-        num_rows="fixed"
-    )
+    # Wyświetlanie danych za pomocą st.dataframe - statyczna i bezpieczna tabela
+    st.dataframe(dane_do_tabeli, hide_index=True, use_container_width=True)
 
-    # Streamlit nie daje bezpośredniego dostępu do indeksu klikniętego przycisku w data_editor.
-    # W praktyce w prostszych aplikacjach często używa się osobnej sekcji z comboboxem i przyciskiem do usuwania,
-    # albo stosuje się workaround z kluczami. Powyższy kod z data_editor jest bardziej elegancki,
-    # ale wymaga nieco "magii" z kluczami, aby Streamlit zareagował poprawnie
-    # na kliknięcie w ButtonColumn.
+    st.divider()
 
-    # Najprostsza, najpewniejsza i najmniej skomplikowana alternatywa:
-    st.subheader("Usuwanie Towarów (Alternatywne)")
+    st.subheader("🗑️ Usuwanie Towarów")
     towary_do_wyboru = [f"{i+1}. {t['nazwa']} (Ilość: {t['ilosc']})" for i, t in enumerate(st.session_state['towary'])]
     
     if towary_do_wyboru:
         indeks_do_usuniecia = st.selectbox(
             "Wybierz towar do usunięcia",
             options=range(len(st.session_state['towary'])),
-            format_func=lambda x: towary_do_wyboru[x]
+            format_func=lambda x: towary_do_wyboru[x],
+            key="select_usun"
         )
         
         if st.button("Usuń Wybrany Towar", key="przycisk_usun_alternatywa"):
             usun_towar(indeks_do_usuniecia)
-            # Wymuszenie ponownego załadowania interfejsu
-            st.experimental_rerun()
+            # Wymuszenie ponownego załadowania interfejsu (Streamlit Rerun)
+            st.rerun()
             
 else:
     st.info("Magazyn jest pusty. Dodaj pierwszy towar powyżej!")
